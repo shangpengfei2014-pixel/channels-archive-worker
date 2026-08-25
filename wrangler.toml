@@ -1,0 +1,7 @@
+name = "channels-archive"
+main = "src/worker.js"
+compatibility_date = "2026-06-01"
+
+rules = [
+  { type = "Text", globs = ["**/*.html"], fallthrough = true }
+]

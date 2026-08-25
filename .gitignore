@@ -1,0 +1,10 @@
+node_modules/
+.env
+.dev.vars
+.wrangler/
+.wecom-app-callback.env
+.wecom-kf.env
+.wecom-contact.env
+.wechat-official.env
+docs/publish_channels.py
+src/adapters/prototype.js

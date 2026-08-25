@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>素材归档</title>
+    <style>
+      :root { color-scheme: light; --green:#07c160; --bg:#f5f7f5; --muted:#6f7973; }
+      * { box-sizing:border-box; }
+      body { margin:0; background:var(--bg); color:#17211b; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+      main { max-width:680px; margin:auto; padding:24px 16px 48px; }
+      h1 { margin:8px 0; font-size:26px; }
+      .lead,.muted { color:var(--muted); line-height:1.65; }
+      .panel { margin-top:18px; padding:18px; background:#fff; border-radius:18px; box-shadow:0 8px 28px rgba(27,66,43,.08); }
+      input[type=url] { width:100%; padding:14px; border:1px solid #d8dfdb; border-radius:12px; font-size:16px; }
+      label { display:flex; gap:8px; align-items:flex-start; margin:14px 0; color:#526058; font-size:13px; line-height:1.55; }
+      button,.button { display:block; width:100%; padding:14px; border:0; border-radius:999px; background:var(--green); color:#fff; text-align:center; text-decoration:none; font-size:16px; font-weight:600; cursor:pointer; }
+      button:disabled { opacity:.55; cursor:wait; }
+      .secondary { margin-top:10px; background:#edf8f1; color:#087d40; }
+      .contact { margin-top:12px; background:#edf8f1; color:#087d40; }
+      .status { margin-top:14px; color:var(--muted); text-align:center; }
+      .error { color:#c4382c; }
+      .result { display:none; }
+      video,.cover { width:100%; max-height:65vh; margin-top:14px; border-radius:14px; background:#000; object-fit:contain; }
+      h2 { margin:14px 0 4px; font-size:18px; line-height:1.45; }
+      .author { color:var(--muted); font-size:14px; }
+      .filename { margin:10px 0 14px; color:#526058; font-size:13px; line-height:1.55; word-break:break-all; }
+      .tips { margin-top:18px; padding:14px; border-radius:12px; background:#f7faf8; color:#5d6962; font-size:13px; line-height:1.65; }
+      .shortcut { margin-top:12px; color:#758078; font-size:12px; text-align:center; line-height:1.6; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>创作者素材归档</h1>
+      <p class="lead">粘贴视频号分享链接，保存本人或已获得授权的视频素材。</p>
+      <a class="button contact" href="/contact">打开素材归档助手</a>
+      <section class="panel">
+        <input id="shareUrl" type="url" placeholder="https://weixin.qq.com/sph/..." autocomplete="off">
+        <label><input id="authorized" type="checkbox"> <span>我确认该内容属于本人，或我已经获得权利人授权，仅用于合法素材归档。</span></label>
+        <button id="submit">解析视频</button>
+        <div id="status" class="status"></div>
+        <div class="shortcut">快捷入口：复制视频号链接后，运行“素材归档”快捷指令即可自动填入并解析。</div>
+      </section>
+      <section id="result" class="panel result">
+        <div id="author" class="author"></div>
+        <h2 id="title"></h2>
+        <div id="filename" class="filename"></div>
+        <video id="preview" controls playsinline preload="metadata"></video>
+        <a id="download" class="button">下载命名文件</a>
+        <a id="open" class="button secondary" target="_blank" rel="noopener">直接打开视频</a>
+        <a id="copy" class="button secondary" href="#">复制视频地址</a>
+        <div class="tips">iPhone 建议使用 Safari 打开本页。点击“下载命名文件”后，保存到“文件”App 会保留上方名称；保存到“照片”App 时，iOS 通常不会展示文件名。如浏览器内置下载受限，请使用“直接打开视频”作为兜底。</div>
+      </section>
+    </main>
+    <script>
+      const input = document.querySelector("#shareUrl");
+      const authorized = document.querySelector("#authorized");
+      const submit = document.querySelector("#submit");
+      const status = document.querySelector("#status");
+      const result = document.querySelector("#result");
+
+      function setStatus(message, error = false) {
+        status.textContent = message;
+        status.className = "status" + (error ? " error" : "");
+      }
+
+      function bestVideoUrl(feedInfo) {
+        return feedInfo?.h264VideoInfo?.videoUrl ||
+          feedInfo?.h265VideoInfo?.videoUrl ||
+          feedInfo?.videoUrl || "";
+      }
+
+      function cleanVideoUrl(value) {
+        try {
+          const url = new URL(value);
+          const key = url.searchParams.get("encfilekey");
+          const token = url.searchParams.get("token");
+          if (!key || !token) return value;
+          const cleaned = new URL(url.origin + url.pathname);
+          cleaned.searchParams.set("encfilekey", key);
+          cleaned.searchParams.set("token", token);
+          return cleaned.toString();
+        } catch {
+          return value;
+        }
+      }
+
+      async function parse() {
+        if (!authorized.checked) return setStatus("请先确认素材授权。", true);
+        const url = input.value.trim();
+        if (!url) return setStatus("请粘贴视频号分享链接。", true);
+        submit.disabled = true;
+        result.style.display = "none";
+        setStatus("正在解析...");
+        try {
+          const response = await fetch("/api/fetch_video_profile", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url }),
+          });
+          const profile = await response.json();
+          if (!response.ok) throw new Error(profile.error || "解析失败");
+          const feed = profile.data?.feedInfo;
+          const videoUrl = bestVideoUrl(feed);
+          if (!feed || !videoUrl) throw new Error("暂未找到可下载的视频");
+          const title = feed.description || "未命名素材";
+          const author = profile.data?.authorInfo?.nickname || "";
+          document.querySelector("#title").textContent = title;
+          document.querySelector("#author").textContent = author;
+          document.querySelector("#filename").textContent = `文件名：${profile.downloadFilename || `${author}_${title}.mp4`}`;
+          document.querySelector("#preview").src = videoUrl;
+          const downloadableUrl = cleanVideoUrl(videoUrl);
+          document.querySelector("#download").href = profile.signedDownloadUrl;
+          document.querySelector("#open").href = downloadableUrl;
+          document.querySelector("#copy").onclick = async (event) => {
+            event.preventDefault();
+            try {
+              await navigator.clipboard.writeText(downloadableUrl);
+              setStatus("视频地址已复制");
+            } catch {
+              setStatus("复制失败，请长按视频地址后复制。", true);
+            }
+          };
+          result.style.display = "block";
+          setStatus("解析成功");
+        } catch (error) {
+          setStatus(error.message || "解析失败，请稍后再试。", true);
+        } finally {
+          submit.disabled = false;
+        }
+      }
+
+      submit.addEventListener("click", parse);
+      const params = new URLSearchParams(location.search);
+      const shortcutUrl = params.get("url");
+      if (shortcutUrl) {
+        input.value = shortcutUrl;
+        const shortcutMode = params.get("shortcut") === "1";
+        authorized.checked = shortcutMode && params.get("authorized") === "1";
+        if (shortcutMode && params.get("auto") === "1" && authorized.checked) parse();
+      }
+    </script>
+  </body>
+</html>

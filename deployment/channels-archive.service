@@ -1,0 +1,19 @@
+[Unit]
+Description=Channels Archive Mobile H5
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/channels-archive-worker
+EnvironmentFile=-/home/ubuntu/channels-archive-worker/.env
+EnvironmentFile=-/home/ubuntu/channels-archive-worker/.wecom-app-callback.env
+EnvironmentFile=-/home/ubuntu/channels-archive-worker/.wecom-kf.env
+EnvironmentFile=-/home/ubuntu/channels-archive-worker/.wecom-contact.env
+EnvironmentFile=-/home/ubuntu/channels-archive-worker/.wechat-official.env
+ExecStart=/usr/bin/node /home/ubuntu/channels-archive-worker/server.js
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
