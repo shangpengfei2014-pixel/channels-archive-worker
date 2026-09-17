@@ -2,12 +2,18 @@
 
 当前版本用于验证 iPhone 端操作链路，不是收费运营版本。
 
-## 必须替换的部分
+## 当前内部部署进展（2026-09-17）
+
+解析层已经从临时公开上游切换为自有 Cloudflare Worker。Worker 的访问凭证和元宝 Cookie 使用 Cloudflare Secret 管理，现有 Node 服务通过 `PROFILE_API_URL` 和 `PROFILE_API_TOKEN` 调用它。
+
+部署和续期记录见 [`视频号解析Worker自部署记录.md`](./视频号解析Worker自部署记录.md)。
+
+## 商业化前仍必须确认的部分
 
 - 删除 `src/adapters/prototype.js`
-- 将自研解析服务部署至自有服务器
-- 在 Cloudflare Worker 中配置 `PROFILE_API_URL`
-- 使用 `PROFILE_API_TOKEN` 限制 Worker 到自研服务的访问
+- 确认自有 Worker、元宝及相关数据源的使用授权
+- 在 Cloudflare Worker 中继续使用 Secret 保存 Cookie 和访问凭证
+- 使用 `PROFILE_API_TOKEN` 限制现有 Node 服务到 Worker 的访问
 
 ## 可以保留的部分
 

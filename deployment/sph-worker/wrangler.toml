@@ -1,0 +1,12 @@
+name = "saveclip-sph"
+main = "worker.js"
+compatibility_date = "2026-09-17"
+
+[[rules]]
+type = "Text"
+globs = ["**/*.html"]
+fallthrough = true
+
+# Secrets are configured outside this repository:
+#   COOKIE
+#   ACCESS_CREDENTIAL

@@ -12,6 +12,7 @@
 - [`docs/截图归档清单.md`](./docs/截图归档清单.md)
 - [`docs/internal-evaluation.md`](./docs/internal-evaluation.md)
 - [`docs/commercial-migration.md`](./docs/commercial-migration.md)
+- [`docs/视频号解析Worker自部署记录.md`](./docs/视频号解析Worker自部署记录.md)
 
 ## 当前链路
 
@@ -20,6 +21,7 @@
 -> 微信公众平台消息推送
 -> https://saveclip.cn/api/wechat/callback
 -> 视频信息解析适配器
+-> 自建 Cloudflare 解析 Worker
 -> 生成 10 分钟短链接 /d/<ticket>
 -> 用户下载 作者_标题.mp4
 ```
@@ -48,6 +50,13 @@ Ubuntu + Node.js + systemd + Nginx + Certbot
 ```text
 GET https://saveclip.cn/health
 ```
+
+当前内部部署状态（2026-09-17）：
+
+- 公众号机器人和 H5 均已切换到自建解析 Worker。
+- Worker 的 API 需要访问凭证；凭证不写入仓库、不写入网页。
+- Worker 使用 Cloudflare Secret 保存元宝登录 Cookie，Node 服务只保存 Worker 地址和访问凭证。
+- Cookie 过期后，按 [`视频号解析 Worker 自部署记录`](./docs/视频号解析Worker自部署记录.md) 更新，不需要改机器人代码。
 
 部署模板：
 
